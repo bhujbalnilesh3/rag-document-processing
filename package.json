@@ -1,0 +1,22 @@
+{
+  "name": "rag-document-processing",
+  "version": "1.0.0",
+  "description": "Poll messages from the SQS queue, download the file from S3, process the content, and insert the processed data into PostgreSQL.",
+  "main": "worker.js",
+  "scripts": {
+    "test": "npm run test",
+    "start": "node src/worker.js"
+  },
+  "author": "nilesh.bhujbal",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.810.0",
+    "@aws-sdk/client-sqs": "^3.810.0",
+    "dotenv": "^16.5.0",
+    "install": "^0.13.0",
+    "npm": "^11.4.0",
+    "openai": "^4.98.0",
+    "pdf-parse": "^1.1.1",
+    "pg": "^8.16.0"
+  }
+}

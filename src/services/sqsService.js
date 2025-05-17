@@ -1,42 +1,68 @@
 const { sqs } = require("../config/aws");
 const { ReceiveMessageCommand, DeleteMessageCommand } = require("@aws-sdk/client-sqs");
 
-const queueUrl = `https://sqs.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_ACCOUNT_ID}/${process.env.DOC_PROCESSING_QUEUE_URL}`;
-
-/**
- * Poll SQS for messages
- */
-const pollQueue = async () => {
-  const params = {
-    QueueUrl: queueUrl,
-    MaxNumberOfMessages: 1,
-    WaitTimeSeconds: 10,
-  };
-
-  try {
-    const data = await sqs.send(new ReceiveMessageCommand(params));
-    return data.Messages || [];
-  } catch (err) {
-    console.error("Error polling SQS:", err.message);
-    return [];
+class SQSService {
+  constructor(region, accountId, queueName) {
+    this.queueUrl = `https://sqs.${region}.amazonaws.com/${accountId}/${queueName}`;
   }
-};
 
-/**
- * Delete a processed message
- */
-const deleteMessage = async (receiptHandle) => {
-  const params = {
-    QueueUrl: queueUrl,
-    ReceiptHandle: receiptHandle,
-  };
+  /**
+   * Poll SQS for messages
+   * @param {number} maxMessages - Maximum number of messages to retrieve
+   * @returns {Promise<Array>} List of messages
+   */
+  async pollQueue(maxMessages = 1) {
+    const params = {
+      QueueUrl: this.queueUrl,
+      MaxNumberOfMessages: maxMessages,
+      WaitTimeSeconds: 10,
+    };
 
-  try {
-    await sqs.send(new DeleteMessageCommand(params));
-    console.log("Message deleted:", receiptHandle);
-  } catch (err) {
-    console.error("Error deleting SQS message:", err.message);
+    try {
+      const data = await sqs.send(new ReceiveMessageCommand(params));
+      console.log(`Polled ${data.Messages ? data.Messages.length : 0} messages from SQS.`);
+      return data.Messages || [];
+    } catch (err) {
+      console.error(`Error polling SQS: ${err.message}`);
+      return [];
+    }
   }
-};
 
-module.exports = { pollQueue, deleteMessage };
+  /**
+   * Delete a processed message from SQS
+   * @param {string} receiptHandle - Receipt handle of the message to delete
+   */
+  async deleteMessage(receiptHandle) {
+    const params = {
+      QueueUrl: this.queueUrl,
+      ReceiptHandle: receiptHandle,
+    };
+
+    try {
+      await sqs.send(new DeleteMessageCommand(params));
+      console.log(`Message deleted: ${receiptHandle}`);
+    } catch (err) {
+      console.error(`Error deleting SQS message: ${err.message}`);
+    }
+  }
+
+  /**
+     * Send a message to the queue
+     * @param {string} messageBody - The message body to send
+     */
+  async sendMessage(messageBody) {
+    const params = {
+      QueueUrl: this.queueUrl,
+      MessageBody: messageBody,
+    };
+
+    try {
+      const data = await sqs.send(new SendMessageCommand(params));
+      console.log(`Message sent with MessageId: ${data.MessageId}`);
+    } catch (err) {
+      console.error(`Error sending message: ${err.message}`);
+    }
+  }
+}
+
+module.exports = SQSService;

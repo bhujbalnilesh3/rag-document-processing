@@ -1,5 +1,4 @@
 const pool = require("../config/connection");
-const { v4: uuidv4 } = require("uuid");
 const { OpenAI } = require("openai");
 
 class DocumentProcessingService {
@@ -30,7 +29,7 @@ class DocumentProcessingService {
         model: this.model,
         input: content,
       });
-
+      
       console.log(`Embedding generated successfully.`);
       return response.data[0].embedding;
     } catch (err) {
@@ -49,33 +48,47 @@ class DocumentProcessingService {
   }
 
   /**
-   * Process document and insert embedding
+   * Process document and insert embedding within a transaction
    * @param {Object} params - Document details
    * @param {string} params.documentId - Document UUID
    * @param {string} params.content - Document content
    * @throws Will throw an error if processing fails
    */
   async processDocument({ documentId, content }) {
-    const id = uuidv4();
+    const client = await pool.connect();
 
     try {
       console.log(`Processing document: ${documentId}`);
+      await client.query('BEGIN');
 
       // Generate embedding
       const embedding = await this.generateEmbedding(content);
 
-      const query = `
-        INSERT INTO embeddings (id, document_id, embedding)
-        VALUES ($1, $2, $3)
+      const insertQuery = `
+        INSERT INTO embeddings (id, embedding)
+        VALUES ($1, $2)
       `;
+      await client.query(insertQuery, [documentId, JSON.stringify(embedding)]);
 
-      await pool.query(query, [id, documentId, JSON.stringify(embedding)]);
       console.log(`Embedding stored for document: ${documentId}`);
 
+      // Update the 'processed' column to true in the 'documents' table
+      const updateQuery = `
+        UPDATE documents
+        SET processed = true
+        WHERE id = $1
+      `;
+      await client.query(updateQuery, [documentId]);
+
+      console.log(`Document ${documentId} marked as processed.`);
+
+      await client.query('COMMIT');
     } catch (err) {
       console.error(`Error processing document ${documentId}: ${err.message}`);
-      // Re-throw error to be handled in the worker
+      await client.query('ROLLBACK');
       throw new Error(`Processing failed for document ${documentId}: ${err.message}`);
+    } finally {
+      client.release();
     }
   }
 }

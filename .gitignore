@@ -62,3 +62,5 @@ jspm_packages/
 *.suo
 *.ntvs*
 *.njspro*
+
+embedding.json

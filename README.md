@@ -61,6 +61,29 @@ cp .env.example .env
 # Update the .env file with your configuration
 ```
 
+## ✅  Create the database
+CREATE DATABASE documentdb;
+
+USE documentdb;
+
+CREATE TABLE rag-users (
+  id UUID PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,  -- Hashed Password
+  role TEXT NOT NULL CHECK (role IN ('admin', 'editor', 'viewer')),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE documents (
+  id UUID PRIMARY KEY,
+  s3_path TEXT NOT NULL,
+  title TEXT NOT NULL,
+  uploaded_by TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 ## 🐳 Docker Deployment
 
 To build and run the service using Docker:

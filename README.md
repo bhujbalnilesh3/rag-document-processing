@@ -37,6 +37,7 @@ OPENAI_MODEL=text-embedding-3-small
 OPENAI_MAX_RETRIES=3
 OPENAI_BACKOFF_FACTOR=2
 POLL_INTERVAL=5000
+MAX_MESSAGE_POLL= 10
 ```
 
 ## 🛠️ Installation
@@ -78,7 +79,6 @@ CREATE TABLE rag-users (
 
 CREATE TABLE documents (
   id UUID PRIMARY KEY,
-  s3_path TEXT NOT NULL,
   title TEXT NOT NULL,
   uploaded_by TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

@@ -32,16 +32,18 @@ const dlqService = new SQSService(
  */
 const processMessages = async () => {
   console.log("Polling SQS...");
+  const pollSize = parseInt(process.env.MAX_MESSAGE_POLL);
 
   try {
-    const messages = await sqsService.pollQueue(1);
+    const messages = await sqsService.pollQueue(pollSize);
 
     for (const message of messages) {
-      const { documentId, s3Key } = JSON.parse(message.Body);
+      const { documentId, title } = JSON.parse(message.Body);
       const receiptHandle = message.ReceiptHandle;
 
       try {
         console.log(`Processing document: ${documentId}`);
+        const s3Key = `${documentId}/${title}.pdf`;
 
         // Download and extract text from S3
         const content = await s3Service.downloadAndExtractText(s3Key);
@@ -73,3 +75,4 @@ const processMessages = async () => {
 
 // Poll the queue periodically
 setInterval(processMessages, POLL_INTERVAL);
+// processMessages();

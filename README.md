@@ -84,6 +84,17 @@ CREATE TABLE documents (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE embeddings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    document_id UUID NOT NULL,
+    chunk_index INTEGER NOT NULL,              -- order of chunk in doc
+    content TEXT NOT NULL,                     -- raw chunk text
+    embedding VECTOR(1536),                    -- vector from OpenAI embedding
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 ## 🐳 Docker Deployment
 
 To build and run the service using Docker:
